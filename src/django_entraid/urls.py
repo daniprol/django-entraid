@@ -18,7 +18,18 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+from .views import home
+
 urlpatterns = [
+    path("", home),
+    path("oauth2/", include("django_auth_adfs.urls")),
     path("admin/", admin.site.urls),
     path("blog/", include("blog.urls"), name="blog"),
 ]
+"""
+This will add routes:
+    /oauth2/login
+    /oauth2/login_no_sso
+    /oauth2/callback
+    /oauth2/logout
+"""

@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_auth_adfs",
     "blog",
 ]
 
@@ -48,6 +49,12 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # With this you can force a user to login without using
+    # the LoginRequiredMixin on every view class
+    #
+    # You can specify URLs for which login is not enforced by
+    # specifying them in the LOGIN_EXEMPT_URLS setting.
+    "django_auth_adfs.middleware.LoginRequiredMiddleware",
 ]
 
 ROOT_URLCONF = "django_entraid.urls"
@@ -55,7 +62,7 @@ ROOT_URLCONF = "django_entraid.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -100,6 +107,11 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTHENTICATION_BACKENDS = [
+    # "django_auth_adfs.backend.AdfsAuthCodeBackend", # when is this used?
+    "django_auth_adfs.backend.AdfsAccessTokenBackend",
+]
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
@@ -122,3 +134,47 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Configure django to redirect users to the right URL for login
+LOGIN_URL = (
+    "django_auth_adfs:login"  # LoginRequiredMiddleware will be disabled for this view
+)
+LOGIN_REDIRECT_URL = "/"  # and this one too?
+# localhost:3000
+
+# You can point login failures to a custom Django function based view for customization of the UI
+CUSTOM_FAILED_RESPONSE_VIEW = "blog.views.login_failed"
+
+
+# streamlit-auth-tupper
+
+# This sample can be configured as a Microsoft Entra ID app,
+# a Microsoft Entra External ID app, or a B2C app.
+# 1. If you are using a Microsoft Entra ID tenent,
+#    configure the AUTHORITY variable as
+#    "https://login.microsoftonline.com/TENANT_GUID"
+#    or "https://login.microsoftonline.com/subdomain.onmicrosoft.com".
+#
+#    Alternatively, leave it undefined if you are building a multi-tenant AAD app
+#    in world-wide cloud
+# checkout the documentation for more settings
+AUTH_ADFS = {
+    "LOGIN_EXEMPT_URLS": "^$",
+    # Make sure to read the documentation about the AUDIENCE setting
+    # when you configured the identifier as a URL!
+    "VERSION": "v2.0",
+    "AUDIENCE": client_id,
+    "CLIENT_ID": client_id,
+    "CLIENT_SECRET": client_secret,
+    "CLAIM_MAPPING": {
+        "first_name": "given_name",
+        "last_name": "family_name",
+        "email": "upn",
+    },
+    "SCOPES": ["User.Read"],
+    "GROUPS_CLAIM": "roles",
+    "MIRROR_GROUPS": True,
+    "USERNAME_CLAIM": "upn",
+    "TENANT_ID": tenant_id,
+    "RELYING_PARTY_ID": client_id,
+}

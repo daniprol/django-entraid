@@ -27,3 +27,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 @permission_classes([IsAuthenticated])
 def private_api_view(request):
     return HttpResponse("API private view")
+
+
+def login_failed(request):
+    return HttpResponse("Login failed lol", status_code=403)
